@@ -18,6 +18,7 @@ import 'package:taskwarrior/widgets/taskw.dart';
 
 class AddTaskBottomSheet extends StatefulWidget {
   const AddTaskBottomSheet({super.key});
+
   @override
   _AddTaskBottomSheetState createState() => _AddTaskBottomSheetState();
 }
@@ -28,6 +29,8 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
   DateTime? due;
   String dueString = '';
   String priority = 'M';
+  bool use24hourFormate = false;
+  final int _value = 1;
 
   @override
   void initState() {
@@ -39,6 +42,14 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
     namecontroller.dispose();
     super.dispose();
   }
+
+  /* void hourformate(bool? value) {
+    if (value != use24hourFormate) {
+      setState(() {
+        use24hourFormate = value!;
+      });
+    }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +85,10 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                   buildDueDate(context),
                   const SizedBox(height: 8),
                   buildPriority(),
+                  const SizedBox(
+                    height: 8,
+                  ),
+                  buildformate(),
                 ],
               ),
             ),
@@ -186,7 +201,7 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                                       brightness: Brightness.dark,
                                       primary: Colors.white,
                                       onPrimary: Colors.black,
-                                      secondary: Colors.black,
+                                      secondary: Colors.blue,
                                       onSecondary: Colors.white,
                                       error: Colors.red,
                                       onError: Colors.black,
@@ -199,7 +214,7 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                                       brightness: Brightness.light,
                                       primary: Colors.black,
                                       onPrimary: Colors.white,
-                                      secondary: Colors.white,
+                                      secondary: Colors.blue,
                                       onSecondary: Colors.black,
                                       error: Colors.red,
                                       onError: Colors.white,
@@ -208,7 +223,11 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                                       surface: Colors.white,
                                       onSurface: Colors.black,
                                     )),
-                          child: child!,
+                          child: MediaQuery(
+                              data: MediaQuery.of(context).copyWith(
+                                alwaysUse24HourFormat: use24hourFormate,
+                              ),
+                              child: child!),
                         );
                       },
                       context: context,
@@ -297,6 +316,40 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
           ),
         ],
       );
+  Widget buildformate() {
+    return Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+      Text(
+        'Click to Choose:',
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+          color: AppSettings.isDarkMode ? Colors.white : Colors.black,
+        ),
+      ),
+      const SizedBox(
+        width: 5.0,
+      ),
+      Wrap(
+        spacing: 5.0,
+        children: List<Widget>.generate(
+          1,
+          (int index) {
+            return ChoiceChip(
+                label: const Text(
+                  '24hour',
+                ),
+                selected: use24hourFormate,
+                onSelected: (bool? selected) {
+                  if (selected != use24hourFormate) {
+                    setState(() {
+                      use24hourFormate = selected!;
+                    });
+                  }
+                });
+          },
+        ),
+      )
+    ]);
+  }
 
   Widget buildCancelButton(BuildContext context) => TextButton(
         child: Text(

@@ -6,22 +6,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taskwarrior/config/app_settings.dart';
 import 'package:taskwarrior/config/taskwarriorcolors.dart';
 import 'package:taskwarrior/widgets/pallete.dart';
+//import 'package:taskwarrior/widgets/taskdetails/dateTimePicker.dart';
 
 class SettingsPage extends StatefulWidget {
-  SettingsPage(
-      {super.key,
-      required this.isSyncOnStartActivel,
-      required this.isSyncOnTaskCreateActivel});
+  SettingsPage({
+    super.key,
+    required this.isSyncOnStartActivel,
+    required this.isSyncOnTaskCreateActivel,
+  });
   bool isSyncOnStartActivel;
   bool isSyncOnTaskCreateActivel;
 
   @override
-  _SettingsPageState createState() => _SettingsPageState();
+  State<SettingsPage> createState() => _SettingsPageState();
 }
 
 class _SettingsPageState extends State<SettingsPage> {
   // bool syncOnStart = false;
-  // bool syncOnTaskCreate = false;
+  // bool syncOnTaskCreate = false;s
 
   // checkAutoSync() async {
   //   ///check if auto sync is on or off

@@ -114,6 +114,9 @@ class _MyAppState extends State<MyApp> {
         debugShowCheckedModeBanner: false,
         title: 'Taskwarrior',
         theme: ThemeData(
+          floatingActionButtonTheme: const FloatingActionButtonThemeData(
+            focusColor: Colors.white,
+          ),
           useMaterial3: true,
           primarySwatch: Palette.kToDark,
           visualDensity: VisualDensity.adaptivePlatformDensity,

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import 'package:taskwarrior/config/app_settings.dart';
+//import 'package:taskwarrior/views/settings/settings.dart';
 
 class DateTimeWidget extends StatelessWidget {
   const DateTimeWidget({
@@ -14,7 +15,6 @@ class DateTimeWidget extends StatelessWidget {
     required this.value,
     required this.callback,
   });
-
   final String name;
   final dynamic value;
   final void Function(dynamic) callback;
@@ -69,12 +69,21 @@ class DateTimeWidget extends StatelessWidget {
             context: context,
             initialDate: initialDate,
             firstDate: DateTime(1990), // >= 1980-01-01T00:00:00.000Z
-            lastDate: DateTime(2037, 12, 31), // < 2038-01-19T03:14:08.000Z
+            lastDate: DateTime(2037, 12, 31),
+
+            // < 2038-01-19T03:14:08.000Z
           );
           if (date != null) {
             var time = await showTimePicker(
               context: context,
               initialTime: TimeOfDay.fromDateTime(initialDate),
+              builder: (BuildContext context, Widget? child) {
+                return MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      alwaysUse24HourFormat: true,
+                    ),
+                    child: child!);
+              },
             );
             if (time != null) {
               var dateTime = date.add(
