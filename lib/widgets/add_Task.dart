@@ -5,11 +5,14 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:taskwarrior/config/app_settings.dart';
 import 'package:taskwarrior/controller/WidgetController.dart';
 import 'package:taskwarrior/model/storage/storage_widget.dart';
+import 'package:taskwarrior/services/notification_services.dart';
 import 'package:taskwarrior/widgets/taskfunctions/taskparser.dart';
 import 'package:taskwarrior/widgets/taskw.dart';
 
@@ -26,8 +29,8 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
   DateTime? due;
   String dueString = '';
   String priority = 'M';
-  final tagcontroller = TextEditingController();
-  List<String> tags = [];
+  bool use24hourFormate = false;
+  final int _value = 1;
 
   @override
   void initState() {
@@ -36,10 +39,17 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
 
   @override
   void dispose() {
-    tagcontroller.dispose();
     namecontroller.dispose();
     super.dispose();
   }
+
+  /* void hourformate(bool? value) {
+    if (value != use24hourFormate) {
+      setState(() {
+        use24hourFormate = value!;
+      });
+    }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +85,10 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                   buildDueDate(context),
                   const SizedBox(height: 8),
                   buildPriority(),
-                  buildTags(),
+                  const SizedBox(
+                    height: 8,
+                  ),
+                  buildformate(),
                 ],
               ),
             ),
@@ -87,58 +100,6 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
         ),
       ),
     );
-  }
-
-  Widget buildTags() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 4.0,
-          children: buildTagChips(),
-        ),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: tagcontroller,
-                style: TextStyle(
-                  color: AppSettings.isDarkMode ? Colors.white : Colors.black,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Add tags',
-                  hintStyle: TextStyle(
-                    color: AppSettings.isDarkMode ? Colors.white : Colors.red,
-                  ),
-                ),
-                onFieldSubmitted: (tag) {
-                  addTag(tag.trim());
-                },
-              ),
-            ),
-            // Replace ElevatedButton with IconButton
-            IconButton(
-              onPressed: () {
-                addTag(tagcontroller.text.trim());
-              },
-              icon: const Icon(Icons.add), // Plus icon
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  List<Widget> buildTagChips() {
-    return tags.map<Widget>((tag) {
-      return InputChip(
-        label: Text(tag),
-        onDeleted: () {
-          removeTag(tag);
-        },
-      );
-    }).toList();
   }
 
   Widget buildName() => TextFormField(
@@ -176,68 +137,29 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                 ),
                 readOnly: true,
                 controller: TextEditingController(
-                  text: (due != null) ? dueString : null,
+                  text: (due != null) ? dueString : "  Select due date",
                 ),
                 decoration: InputDecoration(
                   hintText: 'Select due date',
                   hintStyle: TextStyle(
                     color: AppSettings.isDarkMode ? Colors.white : Colors.black,
                   ),
+                  errorText: (due == null) ? 'Due date is required' : null,
                 ),
+                validator: (name) => name != null && name.isEmpty
+                    ? 'due date is required'
+                    : null,
                 onTap: () async {
                   var date = await showDatePicker(
                     builder: (BuildContext context, Widget? child) {
                       return Theme(
                         data: Theme.of(context).copyWith(
-                          colorScheme: AppSettings.isDarkMode
-                              ? const ColorScheme(
-                                  brightness: Brightness.dark,
-                                  primary: Colors.white,
-                                  onPrimary: Colors.black,
-                                  secondary: Colors.black,
-                                  onSecondary: Colors.white,
-                                  error: Colors.red,
-                                  onError: Colors.black,
-                                  background: Colors.black,
-                                  onBackground: Colors.white,
-                                  surface: Colors.black,
-                                  onSurface: Colors.white,
-                                )
-                              : const ColorScheme(
-                                  brightness: Brightness.light,
-                                  primary: Colors.black,
-                                  onPrimary: Colors.white,
-                                  secondary: Colors.white,
-                                  onSecondary: Colors.black,
-                                  error: Colors.red,
-                                  onError: Colors.white,
-                                  background: Colors.white,
-                                  onBackground: Colors.black,
-                                  surface: Colors.white,
-                                  onSurface: Colors.black,
-                                ),
-                        ),
-                        child: child!,
-                      );
-                    },
-                    fieldHintText: "Month/Date/Year",
-                    context: context,
-                    initialDate: due ?? DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2037, 12, 31),
-                  );
-                  if (date != null) {
-                    var time = await showTimePicker(
-                      builder: (BuildContext context, Widget? child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            textTheme: const TextTheme(),
                             colorScheme: AppSettings.isDarkMode
                                 ? const ColorScheme(
                                     brightness: Brightness.dark,
                                     primary: Colors.white,
                                     onPrimary: Colors.black,
-                                    secondary: Color.fromARGB(255, 70, 68, 68),
+                                    secondary: Colors.black,
                                     onSecondary: Colors.white,
                                     error: Colors.red,
                                     onError: Colors.black,
@@ -258,9 +180,54 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                                     onBackground: Colors.black,
                                     surface: Colors.white,
                                     onSurface: Colors.black,
-                                  ),
-                          ),
-                          child: child!,
+                                  )),
+                        child: child!,
+                      );
+                    },
+                    fieldHintText: "Month/Date/Year",
+                    context: context,
+                    initialDate: due ?? DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2037, 12, 31),
+                  );
+                  if (date != null) {
+                    var time = await showTimePicker(
+                      builder: (BuildContext context, Widget? child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                              textTheme: const TextTheme(),
+                              colorScheme: AppSettings.isDarkMode
+                                  ? const ColorScheme(
+                                      brightness: Brightness.dark,
+                                      primary: Colors.white,
+                                      onPrimary: Colors.black,
+                                      secondary: Colors.blue,
+                                      onSecondary: Colors.white,
+                                      error: Colors.red,
+                                      onError: Colors.black,
+                                      background: Colors.black,
+                                      onBackground: Colors.white,
+                                      surface: Colors.black,
+                                      onSurface: Colors.white,
+                                    )
+                                  : const ColorScheme(
+                                      brightness: Brightness.light,
+                                      primary: Colors.black,
+                                      onPrimary: Colors.white,
+                                      secondary: Colors.blue,
+                                      onSecondary: Colors.black,
+                                      error: Colors.red,
+                                      onError: Colors.white,
+                                      background: Colors.white,
+                                      onBackground: Colors.black,
+                                      surface: Colors.white,
+                                      onSurface: Colors.black,
+                                    )),
+                          child: MediaQuery(
+                              data: MediaQuery.of(context).copyWith(
+                                alwaysUse24HourFormat: use24hourFormate,
+                              ),
+                              child: child!),
                         );
                       },
                       context: context,
@@ -274,29 +241,27 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                           minutes: time.minute,
                         ),
                       );
-                      if (dateTime.isAfter(DateTime.now())) {
-                        due = dateTime.toUtc();
+                      dateTime = dateTime.add(
+                        Duration(
+                          hours: time.hour - dateTime.hour,
+                        ),
+                      );
+                      due = dateTime.toUtc();
+                      NotificationService notificationService =
+                          NotificationService();
+                      notificationService.initiliazeNotification();
 
-                        dueString =
-                            DateFormat("dd-MM-yyyy HH:mm").format(dateTime);
-                        setState(() {});
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                            'Please select a due date and time in the future.',
-                            style: TextStyle(
-                              color: AppSettings.isDarkMode
-                                  ? Colors.white
-                                  : Colors.black,
-                            ),
-                          ),
-                          backgroundColor: AppSettings.isDarkMode
-                              ? Colors.black
-                              : Colors.white,
-                          duration: const Duration(seconds: 2),
-                        ));
+                      if ((dateTime.millisecondsSinceEpoch -
+                              DateTime.now().millisecondsSinceEpoch) >
+                          0) {
+                        notificationService.sendNotification(
+                            dateTime, namecontroller.text);
                       }
+
+                      dueString =
+                          DateFormat("dd-MM-yyyy HH:mm").format(dateTime);
                     }
+                    setState(() {});
                   }
                 },
               ),
@@ -339,7 +304,7 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                     priority = newValue!;
                   });
                 },
-                items: <String>['H', 'M', 'L', 'None']
+                items: <String>['H', 'M', 'L']
                     .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -351,6 +316,40 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
           ),
         ],
       );
+  Widget buildformate() {
+    return Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+      Text(
+        'Click to Choose:',
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.bold,
+          color: AppSettings.isDarkMode ? Colors.white : Colors.black,
+        ),
+      ),
+      const SizedBox(
+        width: 5.0,
+      ),
+      Wrap(
+        spacing: 5.0,
+        children: List<Widget>.generate(
+          1,
+          (int index) {
+            return ChoiceChip(
+                label: const Text(
+                  '24hour',
+                ),
+                selected: use24hourFormate,
+                onSelected: (bool? selected) {
+                  if (selected != use24hourFormate) {
+                    setState(() {
+                      use24hourFormate = selected!;
+                    });
+                  }
+                });
+          },
+        ),
+      )
+    ]);
+  }
 
   Widget buildCancelButton(BuildContext context) => TextButton(
         child: Text(
@@ -374,23 +373,29 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
       ),
       onPressed: () async {
         if (formKey.currentState!.validate()) {
+          if (due == null) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                'Due date cannot be empty. Please select a due date.',
+                style: TextStyle(
+                  color: AppSettings.isDarkMode ? Colors.white : Colors.black,
+                ),
+              ),
+              backgroundColor:
+                  AppSettings.isDarkMode ? Colors.black : Colors.white,
+              duration: const Duration(seconds: 2),
+            ));
+            return;
+          }
           try {
             var task = taskParser(namecontroller.text)
                 .rebuild((b) => b..due = due)
                 .rebuild((p) => p..priority = priority);
-            if (tagcontroller.text != "") {
-              tags.add(tagcontroller.text.trim());
-            }
-            if (tags.isNotEmpty) {
-              task = task.rebuild((t) => t..tags.replace(tags));
-            }
 
             StorageWidget.of(context).mergeTask(task);
             namecontroller.text = '';
             due = null;
             priority = 'M';
-            tagcontroller.text = '';
-            tags = [];
             setState(() {});
             Navigator.of(context).pop();
             widgetController.fetchAllData();
@@ -434,21 +439,5 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
         }
       },
     );
-  }
-
-  void addTag(String tag) {
-    if (tag.isNotEmpty) {
-      setState(() {
-        String trimmedString = tag.trim();
-        tags.add(trimmedString);
-        tagcontroller.text = '';
-      });
-    }
-  }
-
-  void removeTag(String tag) {
-    setState(() {
-      tags.remove(tag);
-    });
   }
 }

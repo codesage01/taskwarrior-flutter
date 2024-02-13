@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import 'package:taskwarrior/config/app_settings.dart';
+//import 'package:taskwarrior/views/settings/settings.dart';
 
 class DateTimeWidget extends StatelessWidget {
   const DateTimeWidget({
@@ -14,7 +15,6 @@ class DateTimeWidget extends StatelessWidget {
     required this.value,
     required this.callback,
   });
-
   final String name;
   final dynamic value;
   final void Function(dynamic) callback;
@@ -62,21 +62,28 @@ class DateTimeWidget extends StatelessWidget {
           ),
         ),
         onTap: () async {
-          var initialDate = DateFormat("E, M/d/y h:mm:ss a").parse(
-              value?.replaceAll(RegExp(r'\s+'), ' ') ??
-                  DateFormat("E, M/d/y h:mm:ss a").format(DateTime.now()));
-
+          var initialDate = DateFormat("dd-MM-yyyy HH:mm").parse(
+              value ?? DateFormat("dd-MM-yyyy HH:mm").format(DateTime.now()));
+          // var initialDate = DateTime.tryParse('$value') ?? DateTime.now();
           var date = await showDatePicker(
             context: context,
             initialDate: initialDate,
-            firstDate: DateTime
-                .now(), // sets the earliest selectable date to the current date. This prevents the user from selecting a date in the past.
-            lastDate: DateTime(2037, 12, 31), // < 2038-01-19T03:14:08.000Z
+            firstDate: DateTime(1990), // >= 1980-01-01T00:00:00.000Z
+            lastDate: DateTime(2037, 12, 31),
+
+            // < 2038-01-19T03:14:08.000Z
           );
           if (date != null) {
             var time = await showTimePicker(
               context: context,
-              initialTime: TimeOfDay.now(),
+              initialTime: TimeOfDay.fromDateTime(initialDate),
+              builder: (BuildContext context, Widget? child) {
+                return MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      alwaysUse24HourFormat: true,
+                    ),
+                    child: child!);
+              },
             );
             if (time != null) {
               var dateTime = date.add(
@@ -90,16 +97,7 @@ class DateTimeWidget extends StatelessWidget {
                   hours: time.hour - dateTime.hour,
                 ),
               );
-              // Check if the selected time is in the past
-              if (dateTime.isBefore(DateTime.now())) {
-                // Show a message that past times can't be set
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Can't set times in the past")),
-                );
-              } else {
-                // If the time is not in the past, proceed as usual
-                return callback(dateTime.toUtc());
-              }
+              return callback(dateTime.toUtc());
             }
           }
         },

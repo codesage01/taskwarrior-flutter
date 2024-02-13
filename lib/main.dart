@@ -3,7 +3,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import 'package:loggy/loggy.dart';
@@ -47,10 +46,7 @@ Future main([List<String> args = const []]) async {
       '${testingDirectory.path}/profiles/acae0462-6a34-11e4-8001-002590720087',
     ).createSync(recursive: true);
   }
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown
-  ]).then((value) => 
+
   runApp(
     FutureBuilder<Directory>(
       future: getApplicationDocumentsDirectory(),
@@ -61,7 +57,7 @@ Future main([List<String> args = const []]) async {
             )
           : const AppSetupPlaceholder(),
     ),
-  ));
+  );
 }
 
 Future init() async {
@@ -118,6 +114,9 @@ class _MyAppState extends State<MyApp> {
         debugShowCheckedModeBanner: false,
         title: 'Taskwarrior',
         theme: ThemeData(
+          floatingActionButtonTheme: const FloatingActionButtonThemeData(
+            focusColor: Colors.white,
+          ),
           useMaterial3: true,
           primarySwatch: Palette.kToDark,
           visualDensity: VisualDensity.adaptivePlatformDensity,
